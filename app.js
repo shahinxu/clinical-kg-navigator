@@ -2001,8 +2001,13 @@
     [["d1","r1",COLORS.steel],["r1","v1",COLORS.steel],["d2","r1",COLORS.steel],["d2","r2",COLORS.steel],["r2","v2",COLORS.cardinal],["r1","v2",COLORS.steel]].forEach(([u,v,ec]) => {
       ctx.strokeStyle = ec; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(sx(gn[u][0]), sy(gn[u][1])); ctx.lineTo(sx(gn[v][0]), sy(gn[v][1])); ctx.stroke();
     });
-    Object.values(gn).forEach(([nx, ny, nc, nl]) => {
-      ctx.beginPath(); ctx.arc(sx(nx), sy(ny), sx(10.5), 0, Math.PI * 2); ctx.fillStyle = nc; ctx.fill();
+    Object.entries(gn).forEach(([key, [nx, ny, nc, nl]]) => {
+      if (key === "c") {
+        drawRoundRect(sx(nx - 20), sy(ny - 9), sx(40), sy(18), 8);
+        ctx.fillStyle = nc; ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(sx(nx), sy(ny), sx(11.5), 0, Math.PI * 2); ctx.fillStyle = nc; ctx.fill();
+      }
       ctx.font = `700 ${fs(8)}px ui-monospace, Consolas, monospace`; ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(nl, sx(nx), sy(ny));
     });
