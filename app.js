@@ -35,7 +35,7 @@
     adverse_effect:       { color: "#a8a29e", label: "Side Effect",       r: 3.2 },
   };
 
-  let ACTIVE_VIEW = "pipeline";
+  let ACTIVE_VIEW = "explorer";
 
   const nodeById = new Map();
   const adjOut = new Map();
@@ -151,6 +151,9 @@
     graphState.selectedEdge = targetEdgeIdx;
     graphState.pathHighlight = null;
     focusCameraOnNode(nid, 2.2);
+    const inspD = document.getElementById("inspectorDrawer");
+    if (inspD) inspD.classList.remove("drawer-closed");
+    setRightTab("inspector");
     if (targetEdgeIdx !== null) renderEdgeInspector(DATA.edges[targetEdgeIdx]);
     else renderNodeInspector(n);
   }
@@ -884,6 +887,15 @@
     } else if (graphState.selectedEdge !== null) {
       const se = DATA.edges[graphState.selectedEdge];
       if (se) { focusNodes = new Set([se.s, se.t]); focusEdgeIdxs = new Set([se.i]); }
+    } else if (graphState.hoveredNode) {
+      // Hover-Spotlight Mode: smoothly dims unrelated nodes so strangers immediately see causal pathways!
+      focusNodes = new Set([graphState.hoveredNode]);
+      focusEdgeIdxs = new Set();
+      edges.forEach((e) => {
+        if (e.s === graphState.hoveredNode || e.t === graphState.hoveredNode) {
+          focusNodes.add(e.s); focusNodes.add(e.t); focusEdgeIdxs.add(e.i);
+        }
+      });
     }
 
     const pairCounts = new Map();
@@ -1153,14 +1165,23 @@
     const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
     if (sx < 0 || sy < 0 || sx > rect.width || sy > rect.height) return;
     const hn = hitTestNode(sx, sy);
+    const inspDrawer = document.getElementById("inspectorDrawer");
     if (hn) {
       graphState.selectedNode = hn; graphState.selectedEdge = null; graphState.pathHighlight = null;
+      if (inspDrawer) inspDrawer.classList.remove("drawer-closed");
+      setRightTab("inspector");
       renderNodeInspector(nodeById.get(hn));
     } else {
       const he = hitTestEdge(sx, sy);
       if (he) {
         graphState.selectedEdge = he.i; graphState.selectedNode = null; graphState.pathHighlight = null;
+        if (inspDrawer) inspDrawer.classList.remove("drawer-closed");
+        setRightTab("inspector");
         renderEdgeInspector(he);
+      } else {
+        // Clicking empty canvas cleanly clears focus & closes floating inspector
+        graphState.selectedNode = null; graphState.selectedEdge = null; graphState.pathHighlight = null;
+        if (inspDrawer) inspDrawer.classList.add("drawer-closed");
       }
     }
   });
@@ -1769,13 +1790,63 @@
   }
   window.addEventListener("resize", () => { resizePipeCanvas(); resizeGraphCanvas(); resizeReversalCanvas(); resizeModelCanvas(); });
 
+  // Progressive-Disclosure Floating Controls (Scale Pills, Guided Stories, Slide-Over Drawers)
+  const leftDrawer = document.getElementById("leftToolsDrawer");
+  const rightDrawer = document.getElementById("inspectorDrawer");
+  const btnTools = document.getElementById("btnToggleTools");
+  const btnStats = document.getElementById("btnToggleStats");
+  const syncExplorerPills = (presetId) => {
+    document.querySelectorAll(".scale-pill").forEach((b) => b.classList.toggle("active", b.dataset.scalePreset === presetId));
+    document.querySelectorAll(".story-chip").forEach((b) => b.classList.toggle("active", b.dataset.story === presetId));
+  };
+  document.querySelectorAll(".scale-pill").forEach((b) => b.addEventListener("click", () => {
+    selectPreset(b.dataset.scalePreset, true);
+    syncExplorerPills(b.dataset.scalePreset);
+    if (rightDrawer) rightDrawer.classList.add("drawer-closed");
+  }));
+  document.querySelectorAll(".story-chip").forEach((b) => b.addEventListener("click", () => {
+    selectPreset(b.dataset.story, true);
+    syncExplorerPills(b.dataset.story);
+    if (rightDrawer) rightDrawer.classList.add("drawer-closed");
+  }));
+  if (btnTools && leftDrawer) {
+    btnTools.addEventListener("click", () => {
+      const willOpen = leftDrawer.classList.contains("drawer-closed");
+      leftDrawer.classList.toggle("drawer-closed", !willOpen);
+      btnTools.classList.toggle("active", willOpen);
+    });
+  }
+  const btnCloseTools = document.getElementById("btnCloseTools");
+  if (btnCloseTools && leftDrawer) {
+    btnCloseTools.addEventListener("click", () => {
+      leftDrawer.classList.add("drawer-closed");
+      if (btnTools) btnTools.classList.remove("active");
+    });
+  }
+  if (btnStats && rightDrawer) {
+    btnStats.addEventListener("click", () => {
+      const isClosed = rightDrawer.classList.contains("drawer-closed");
+      if (isClosed) {
+        rightDrawer.classList.remove("drawer-closed");
+        setRightTab("stats");
+      } else {
+        rightDrawer.classList.add("drawer-closed");
+      }
+    });
+  }
+  const btnCloseInsp = document.getElementById("btnCloseInspector");
+  if (btnCloseInsp && rightDrawer) {
+    btnCloseInsp.addEventListener("click", () => rightDrawer.classList.add("drawer-closed"));
+  }
+
   buildStepper();
   setPipeStage(0);
   buildModelStepper();
   setModelStage(0);
   renderNodeLegend();
   initPathTracer();
-  selectPreset("core", true);
+  selectPreset("vasopressors", true);
+  syncExplorerPills("vasopressors");
   initReversalLab();
   renderFunnel();
   renderLedgerTable();

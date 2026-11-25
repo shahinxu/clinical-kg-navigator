@@ -18,37 +18,33 @@
     </div>
 
     <nav class="topnav" role="tablist">
-      <button class="nav-tab active" data-view="pipeline" role="tab">
-        <span class="tab-idx">01</span><span>KG Construction</span>
+      <button class="nav-tab active" data-view="explorer" role="tab">
+        <span class="tab-idx">01</span><span>Graph Explorer</span>
       </button>
-      <button class="nav-tab" data-view="explorer" role="tab">
-        <span class="tab-idx">02</span><span>Graph Explorer</span>
-      </button>
-      <button class="nav-tab" data-view="ledger" role="tab">
-        <span class="tab-idx">03</span><span>Keep vs. Drop</span>
+      <button class="nav-tab" data-view="pipeline" role="tab">
+        <span class="tab-idx">02</span><span>Construction</span>
       </button>
       <button class="nav-tab" data-view="conflicts" role="tab">
-        <span class="tab-idx">04</span><span>Conflict Lab</span>
+        <span class="tab-idx">03</span><span>Quality &amp; Conflicts</span>
       </button>
       <button class="nav-tab" data-view="model" role="tab">
-        <span class="tab-idx">05</span><span>End-to-End Model</span>
+        <span class="tab-idx">04</span><span>World Model</span>
       </button>
     </nav>
 
     <div class="topbar-right">
       <div class="global-search-wrap">
-        <input id="globalSearch" type="text" placeholder="Search 985 nodes (e.g. norepinephrine, MAP)..." autocomplete="off" />
+        <input id="globalSearch" type="text" placeholder="Search drug, receptor, or vital..." autocomplete="off" />
         <div id="globalSearchResults" class="search-dropdown hidden"></div>
       </div>
-      <button id="btnPresent" class="btn-ghost btn-sm" title="Fullscreen presentation mode (use Left/Right arrow keys)">Present</button>
     </div>
   </header>
 
   <main class="main-shell">
     <!-- ============================================================ -->
-    <!-- VIEW 01: CONTINUOUS LIVING GRAPH CONSTRUCTION                -->
+    <!-- VIEW 02: CONTINUOUS LIVING GRAPH CONSTRUCTION                -->
     <!-- ============================================================ -->
-    <section id="view-pipeline" class="view active">
+    <section id="view-pipeline" class="view">
       <div class="page-head">
         <div>
           <h1 class="page-title">How the Clinical Physiological KG Is Built — Step by Step</h1>
@@ -101,11 +97,15 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- VIEW 02: INTERACTIVE GRAPH EXPLORER                          -->
+    <!-- VIEW 01 (DEFAULT): FULL-BLEED INTERACTIVE GRAPH EXPLORER     -->
     <!-- ============================================================ -->
-    <section id="view-explorer" class="view">
-      <div class="explorer-layout">
-        <aside class="rail-left">
+    <section id="view-explorer" class="view active">
+      <div class="explorer-layout explorer-fullbleed">
+        <aside id="leftToolsDrawer" class="rail-left drawer-overlay drawer-left drawer-closed">
+          <div class="drawer-head">
+            <span class="rail-title" style="margin:0">Filters &amp; Path Tracer</span>
+            <button id="btnCloseTools" class="btn-icon-close" title="Close">×</button>
+          </div>
           <div class="rail-section">
             <div class="rail-title">Curated Clinical Views</div>
             <div id="presetList" class="preset-list"></div>
@@ -145,32 +145,55 @@
 
         <div class="graph-stage">
           <canvas id="graphCanvas"></canvas>
+
+          <!-- Clean Floating Top Bar: Scale Switcher (Center) + Minimal Tools/Zoom (Right) -->
           <div class="graph-hud-top">
             <span id="graphStatusText" class="hud-stat"></span>
+            <div class="scale-pill-group" role="group" aria-label="Graph scale">
+              <button class="scale-pill active" data-scale-preset="vasopressors">Key Pathways (21)</button>
+              <button class="scale-pill" data-scale-preset="core">Core Causal (262)</button>
+              <button class="scale-pill" data-scale-preset="full">Full Graph (985)</button>
+            </div>
             <div class="hud-actions">
+              <button id="btnToggleTools" class="hud-btn hud-btn-pill" title="Open Filters & Path Tracer">Filters &amp; Paths</button>
+              <button id="btnToggleStats" class="hud-btn hud-btn-pill" title="View Graph Statistics">Stats</button>
               <button id="btnZoomIn" class="hud-btn" title="Zoom In">+</button>
               <button id="btnZoomOut" class="hud-btn" title="Zoom Out">−</button>
               <button id="btnZoomReset" class="hud-btn" title="Fit View">Fit</button>
-              <button id="btnExportPng" class="hud-btn" title="Download high-res PNG of current view">Export PNG</button>
+              <button id="btnExportPng" class="hud-btn hidden" title="Export PNG">PNG</button>
             </div>
           </div>
+
+          <!-- Guided Clinical Stories Bar (Bottom-Center — Instant Clarity for First-Time Visitors!) -->
+          <div class="story-bar">
+            <span class="story-kicker">EXPLORE:</span>
+            <button class="story-chip active" data-story="vasopressors">Vasopressors → MAP</button>
+            <button class="story-chip" data-story="reversals">Dose Reversals</button>
+            <button class="story-chip" data-story="sepsis">Septic Shock</button>
+            <button class="story-chip" data-story="vitaldb">Operating Room</button>
+            <button class="story-chip" data-story="conflicts">17 Conflicts</button>
+          </div>
+
           <div class="minimap-wrap" title="Click or drag to pan">
             <canvas id="minimapCanvas" width="168" height="122"></canvas>
             <span class="minimap-lbl">NAVIGATOR</span>
           </div>
           <div id="graphTooltip" class="graph-tooltip hidden"></div>
           <div class="graph-hud-bottom">
-            Scroll to zoom · Drag canvas or minimap to pan · Drag any node · Click node or edge for verbatim provenance
+            Hover to spotlight · Click any node or edge for clinical evidence · Scroll to zoom
           </div>
         </div>
 
-        <aside id="inspectorDrawer" class="rail-right">
+        <aside id="inspectorDrawer" class="rail-right drawer-overlay drawer-right drawer-closed">
           <div class="inspector-head">
             <div class="right-tabs">
-              <button id="tabRightStats" class="rtab active">Statistics</button>
-              <button id="tabRightInsp" class="rtab">Inspector</button>
+              <button id="tabRightInsp" class="rtab active">Inspector</button>
+              <button id="tabRightStats" class="rtab">Statistics</button>
             </div>
-            <button id="btnResetSelection" class="btn-link">Reset Focus</button>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button id="btnResetSelection" class="btn-link">Reset</button>
+              <button id="btnCloseInspector" class="btn-icon-close" title="Close">×</button>
+            </div>
           </div>
           <div id="inspectorBody" class="inspector-body"></div>
         </aside>
@@ -235,31 +258,34 @@
         </div>
       </div>
 
-      <div class="lab-section">
-        <div class="lab-section-head">
-          <div>
-            <div class="col-kicker">Conflict Type 02 · Empirical Cohorts vs. Physiology (All 17 Logged Conflicts)</div>
-            <h2 class="section-h2">Non-Overwrite Policy: 7 Post-Treatment Artefacts · 3 Subgroup-Specific · 7 Opposing Cohorts</h2>
+      <details class="clean-accordion">
+        <summary>Inspect All 17 Empirical Cohort Conflicts &amp; Competing Pathways</summary>
+        <div class="lab-section" style="margin-top:14px">
+          <div class="lab-section-head">
+            <div>
+              <div class="col-kicker">Conflict Type 02 · Empirical Cohorts vs. Physiology (All 17 Logged Conflicts)</div>
+              <h2 class="section-h2">Non-Overwrite Policy: 7 Post-Treatment Artefacts · 3 Subgroup-Specific · 7 Opposing Cohorts</h2>
+            </div>
+            <div class="pill-tabs" id="conflictKindTabs">
+              <button class="pill-btn active" data-ckind="all">All (17)</button>
+              <button class="pill-btn" data-ckind="apparent">Apparent Artefact (7)</button>
+              <button class="pill-btn" data-ckind="conditional">Conditional (3)</button>
+              <button class="pill-btn" data-ckind="contradicting">Contradicting (7)</button>
+            </div>
           </div>
-          <div class="pill-tabs" id="conflictKindTabs">
-            <button class="pill-btn active" data-ckind="all">All (17)</button>
-            <button class="pill-btn" data-ckind="apparent">Apparent Artefact (7)</button>
-            <button class="pill-btn" data-ckind="conditional">Conditional (3)</button>
-            <button class="pill-btn" data-ckind="contradicting">Contradicting (7)</button>
-          </div>
+          <div id="conflictsTableWrap" class="ledger-table-wrap"></div>
         </div>
-        <div id="conflictsTableWrap" class="ledger-table-wrap"></div>
-      </div>
 
-      <div class="lab-section">
-        <div class="lab-section-head">
-          <div>
-            <div class="col-kicker">Conflict Type 03 · Competing Physiological Pathways &amp; Clinical Scope</div>
-            <h2 class="section-h2">Direct vs. Reflex Chains &amp; Phase-Dependent Disagreements Inside the KG</h2>
+        <div class="lab-section">
+          <div class="lab-section-head">
+            <div>
+              <div class="col-kicker">Conflict Type 03 · Competing Physiological Pathways &amp; Clinical Scope</div>
+              <h2 class="section-h2">Direct vs. Reflex Chains &amp; Phase-Dependent Disagreements Inside the KG</h2>
+            </div>
           </div>
+          <div id="claimsCrossCheck" class="claims-grid"></div>
         </div>
-        <div id="claimsCrossCheck" class="claims-grid"></div>
-      </div>
+      </details>
     </section>
 
     <!-- ============================================================ -->
