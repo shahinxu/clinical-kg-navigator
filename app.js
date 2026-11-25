@@ -1450,7 +1450,7 @@
 
   function renderFunnel() {
     const steps = [
-      { num: "GATE 01", title: "Seed Drug Whitelist", pct: 100, stat: "8.1M PrimeKG rows → 33/35 drugs", desc: "Keep only protein targets and SIDER side effects matching the 35 ICU drugs; discard >99.9% unrelated rows." },
+      { num: "GATE 01", title: "Seed Drug Whitelist", pct: 100, stat: "129k nodes / 8.1M edges → 985 / 3,964", desc: "Anchor on 35 ICU/OR drugs and monitored vitals; prune 99.2% of PrimeKG nodes and >99.9% of edges." },
       { num: "GATE 02", title: "2nd-Pass Verbatim Check", pct: 78, stat: "15 removed · 55+ corrected", desc: "Remove unsupported or mis-targeted biology (pain→HR, CHRN→ventilation_drive); replace paraphrases verbatim." },
       { num: "GATE 03", title: "Quantitative & Quality Filter", pct: 62, stat: "1,163 items → 872 kept · 112 flagged", desc: "Attach 872 clinical items to KG; drop 291 non-graph formulas; exclude 112 flagged studies from training." },
       { num: "GATE 04", title: "FDA XML <15w Assert", pct: 32, stat: "877 mined → 43 kept (4.9%)", desc: "Exact substring check against cached FDA XML labels; 95.1% of auto-mined candidate sentences rejected." },
