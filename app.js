@@ -728,7 +728,21 @@
     }).join("");
   }
 
-  function layoutSubsetCleanly(nids) {
+  function formatNodeDisplay(id) {
+    const map = {
+      "receptor:ADRA1": "α1 (ADRA1)",
+      "receptor:ADRB1": "β1 (ADRB1)",
+      "receptor:ADRB2": "β2 (ADRB2)",
+      "receptor:ADRA2": "α2 (ADRA2)",
+      "receptor:AVPR1A": "V1a (AVPR1A)",
+      "receptor:PDE3": "PDE3",
+      "class:volatile_anaesthetic": "Volatile Anesthetic",
+    };
+    if (map[id]) return map[id];
+    return id.replace(/^receptor:/, "").replace(/^class:/, "").replace(/_/g, " ");
+  }
+
+  function layoutSubsetCleanly(nids, snapImmediate = false) {
     const layers = {
       drug: 0, intervention: 0, drug_class: 0,
       receptor: 1, protein: 1,
@@ -742,14 +756,15 @@
       buckets[layers[n ? n.type : "state"] ?? 2].push(id);
     });
     const nonEmpty = buckets.map((b, i) => ({ b, i })).filter((o) => o.b.length > 0);
-    const xSpan = Math.min(740, Math.max(460, nonEmpty.length * 170));
+    const xSpan = Math.min(980, Math.max(680, nonEmpty.length * 255));
     nonEmpty.forEach((col, ci) => {
       const x = nonEmpty.length === 1 ? 0 : -xSpan / 2 + (ci / (nonEmpty.length - 1)) * xSpan;
       col.b.sort((a, b) => (nodeById.get(b)?.sdeg || 0) - (nodeById.get(a)?.sdeg || 0));
-      const ySpan = Math.min(540, Math.max(120, (col.b.length - 1) * 58));
+      const ySpan = Math.min(540, Math.max(220, (col.b.length - 1) * 82));
       col.b.forEach((id, ri) => {
         const y = col.b.length === 1 ? 0 : -ySpan / 2 + (ri / (col.b.length - 1)) * ySpan;
         graphState.targets.set(id, { x, y });
+        if (snapImmediate) graphState.positions.set(id, { x, y });
       });
     });
   }
@@ -785,8 +800,9 @@
         "receptor:ADRA1", "receptor:ADRB1", "receptor:ADRB2", "receptor:AVPR1A", "receptor:PDE3",
         "SVR", "CO", "contractility", "MAP", "SBP", "DBP", "HR", "CVP", "PAWP"].forEach((id) => { if (nodeById.has(id)) nSet.add(id); });
       eList = DATA.edges.filter((e) => nSet.has(e.s) && nSet.has(e.t) && (e.sign === 1 || e.sign === -1 || e.r.includes("agonist") || e.r.includes("activation") || e.r.includes("inhibitor")));
-      layoutSubsetCleanly(nSet);
-      graphState.camTarget = { x: 0, y: 0, scale: 0.92 };
+      layoutSubsetCleanly(nSet, !graphState._initialized);
+      graphState._initialized = true;
+      graphState.camTarget = { x: 0, y: 0, scale: 1.02 };
     } else if (presetId === "reversals") {
       const pairKeys = new Set(DATA.reversals.map((r) => r.src + "->" + r.dst));
       eList = DATA.edges.filter((e) => pairKeys.has(e.s + "->" + e.t));
@@ -998,7 +1014,7 @@
         (n.sdeg >= 8 && graphState.cam.scale >= 0.62) ||
         (n.tier === "core_1m_causal" && graphState.cam.scale >= 1.15)
       );
-      if (shouldLabel && isFoc) labelsToDraw.push({ text: id, x: sc.x, y: sc.y - r - 4, bold: isSel || isHov || n.type === "observed_variable" });
+      if (shouldLabel && isFoc) labelsToDraw.push({ text: formatNodeDisplay(id), x: sc.x, y: sc.y - r - 6, bold: isSel || isHov || n.type === "observed_variable" });
     });
 
     edgeLabels.forEach((lb) => drawHaloText(ctx, lb.txt, lb.x, lb.y, lb.col, "600 10px ui-monospace, Consolas, monospace"));
