@@ -1875,8 +1875,8 @@
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sx(18), sy(yDiv)); ctx.lineTo(sx(1182), sy(yDiv)); ctx.stroke();
     ctx.setLineDash([]);
-    drawHaloText(ctx, "INFERENCE HIGHWAY  ·  BASE CLINICAL WORLD MODEL f_θ  (ACTIVE AT TRAIN & TEST)", sx(20), sy(yDiv - 11), COLORS.steel, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
-    drawHaloText(ctx, S === 4 ? "TRAINING-ONLY KG & PRIOR ENGINE  (DETACHED AT TEST TIME — 0 EXTRA PARAMS, 0 LATENCY)" : "TRAINING-ONLY KG & PRIOR INJECTION ENGINE  (ALL-IN-LOSS SUPERVISION)", sx(20), sy(yDiv + 12), S === 4 ? COLORS.muted : COLORS.ochre, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
+    drawHaloText(ctx, "INFERENCE HIGHWAY  ·  BASE WORLD MODEL f_θ  (TRAIN & DEPLOYMENT)", sx(20), sy(yDiv - 11), COLORS.steel, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
+    drawHaloText(ctx, S === 4 ? "TRAINING-ONLY KG ENGINE  (DETACHED)" : "TRAINING-ONLY KG & PRIOR ENGINE", sx(20), sy(yDiv + 12), S === 4 ? COLORS.muted : COLORS.ochre, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
     ctx.restore();
 
     // Base World Model f_θ Enclosure
@@ -2017,7 +2017,17 @@
     if (S === 4) {
       ctx.save();
       ctx.globalAlpha = anim;
-      drawHaloText(ctx, "× DETACHED AT TEST TIME — 0 EXTRA INPUTS · 0 EXTRA PARAMS · 0 GRAPH LATENCY", sx(600), sy(404), COLORS.cardinal, `700 ${fs(11.5)}px -apple-system, Arial, sans-serif`);
+      drawRoundRect(sx(300), sy(386), sx(600), sy(36), 8);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = COLORS.cardinal;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.font = `700 ${fs(10.8)}px -apple-system, Arial, sans-serif`;
+      ctx.fillStyle = COLORS.cardinal;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("× DETACHED AT TEST TIME  —  0 EXTRA INPUTS · 0 EXTRA PARAMS · 0 GRAPH LATENCY", sx(600), sy(404));
       ctx.restore();
     }
   }
