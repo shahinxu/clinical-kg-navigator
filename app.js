@@ -1775,7 +1775,7 @@
     const anim = easeOutCubic(modelState.anim);
     ctx.clearRect(0, 0, W, H);
 
-    // Responsive coordinate helper mapped from 1200 x 540 design space
+    // Visual-first NeurIPS architecture layout (1200 x 540 design space — icons, curves, stacked slabs, zero paragraphs!)
     const sx = (v) => (v / 1200) * W;
     const sy = (v) => (v / 540) * H;
     const fs = (px) => Math.max(8.5, px * Math.min(W / 1200, H / 540));
@@ -1790,47 +1790,53 @@
       ctx.closePath();
     };
 
-    const drawArchBox = (x0, y0, x1, y1, title, lines, accent, fillTint, active, alpha = 1, dashed = false, badge = "") => {
+    const drawSlab = (x0, y0, x1, y1, title, sub, accent, tint, active, alpha = 1, dashed = false, stack = 1) => {
       const X = sx(x0), Y = sy(y0), BW = sx(x1 - x0), BH = sy(y1 - y0);
       ctx.save();
       ctx.globalAlpha = alpha;
+      if (stack >= 2) {
+        drawRoundRect(X + sx(4), Y - sy(4), BW, BH, 7);
+        ctx.fillStyle = active ? tint : "#fafbfc";
+        ctx.fill();
+        ctx.strokeStyle = active ? "#a8c2da" : "#e2e8f0";
+        ctx.lineWidth = 1.0;
+        ctx.stroke();
+      }
       drawRoundRect(X, Y, BW, BH, 7);
-      ctx.fillStyle = active ? fillTint : "#fafbfc";
+      ctx.fillStyle = active ? tint : "#fafbfc";
       ctx.fill();
       ctx.strokeStyle = active ? accent : "#cbd5e1";
-      ctx.lineWidth = active ? 1.6 : 1.0;
+      ctx.lineWidth = active ? 1.7 : 1.0;
       if (dashed) ctx.setLineDash([5, 3]);
       ctx.stroke();
       ctx.setLineDash([]);
       if (!dashed && active) {
-        ctx.beginPath();
-        ctx.moveTo(X + 6, Y + 1);
-        ctx.lineTo(X + BW - 6, Y + 1);
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 2.4;
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(X + 6, Y + 1); ctx.lineTo(X + BW - 6, Y + 1);
+        ctx.strokeStyle = accent; ctx.lineWidth = 2.4; ctx.stroke();
       }
-      let cy = Y + sy(12);
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      if (badge) {
-        ctx.font = `700 ${fs(8.5)}px ui-monospace, Consolas, monospace`;
-        ctx.fillStyle = active ? accent : COLORS.muted;
-        ctx.fillText(badge, X + sx(9), cy);
-        cy += sy(12.5);
-      }
-      ctx.font = `700 ${fs(11.2)}px -apple-system, Arial, sans-serif`;
-      ctx.fillStyle = active ? COLORS.ink : COLORS.muted;
-      ctx.fillText(title, X + sx(9), cy);
-      cy += sy(16);
-      ctx.font = `500 ${fs(9.3)}px ui-monospace, Consolas, monospace`;
-      for (const [txt, col] of lines) {
-        if (txt) {
-          ctx.fillStyle = active ? (col || COLORS.ink2) : COLORS.muted;
-          ctx.fillText(txt, X + sx(9), cy);
+      if (title) {
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = `700 ${fs(11.5)}px -apple-system, Arial, sans-serif`;
+        ctx.fillStyle = active ? COLORS.ink : COLORS.muted;
+        ctx.fillText(title, X + BW / 2, sub ? Y + BH / 2 - sy(8) : Y + BH / 2);
+        if (sub) {
+          ctx.font = `500 ${fs(9.3)}px ui-monospace, Consolas, monospace`;
+          ctx.fillStyle = active ? accent : COLORS.muted;
+          ctx.fillText(sub, X + BW / 2, Y + BH / 2 + sy(9));
         }
-        cy += sy(13.2);
       }
+      ctx.restore();
+    };
+
+    const drawOpCircle = (cx, cy, r, sym, accent, active) => {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(sx(cx), sy(cy), sx(r), 0, Math.PI * 2);
+      ctx.fillStyle = active ? "#f2f7fd" : "#fafbfc"; ctx.fill();
+      ctx.strokeStyle = active ? accent : "#cbd5e1"; ctx.lineWidth = active ? 1.8 : 1.0; ctx.stroke();
+      ctx.font = `700 ${fs(13)}px -apple-system, Arial, sans-serif`;
+      ctx.fillStyle = active ? accent : COLORS.muted;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(sym, sx(cx), sy(cy));
       ctx.restore();
     };
 
@@ -1842,10 +1848,7 @@
       ctx.strokeStyle = active ? col : "#d1d5db";
       ctx.lineWidth = active ? 1.8 : 1.0;
       if (dashed) ctx.setLineDash([5, 3]);
-      ctx.beginPath();
-      ctx.moveTo(X1, Y1);
-      ctx.quadraticCurveTo(MX, MY, X2, Y2);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X1, Y1); ctx.quadraticCurveTo(MX, MY, X2, Y2); ctx.stroke();
       ctx.setLineDash([]);
       const ang = Math.atan2(Y2 - MY, X2 - MX), sz = 5.5;
       ctx.fillStyle = active ? col : "#d1d5db";
@@ -1853,181 +1856,239 @@
       ctx.moveTo(X2, Y2);
       ctx.lineTo(X2 - sz * Math.cos(ang - 0.42), Y2 - sz * Math.sin(ang - 0.42));
       ctx.lineTo(X2 - sz * Math.cos(ang + 0.42), Y2 - sz * Math.sin(ang + 0.42));
-      ctx.closePath();
-      ctx.fill();
+      ctx.closePath(); ctx.fill();
       if (active && pulse) {
         const u = (modelState.t * 0.55) % 1, v = 1 - u;
-        const px = v * v * X1 + 2 * v * u * MX + u * u * X2;
-        const py = v * v * Y1 + 2 * v * u * MY + u * u * Y2;
         ctx.beginPath();
-        ctx.arc(px, py, 3.0, 0, Math.PI * 2);
-        ctx.fillStyle = col;
-        ctx.fill();
+        ctx.arc(v * v * X1 + 2 * v * u * MX + u * u * X2, v * v * Y1 + 2 * v * u * MY + u * u * Y2, 3.0, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.fill();
       }
       ctx.restore();
     };
 
     // Lane Divider
-    const yDiv = 278;
+    const yDiv = 282;
     ctx.save();
-    ctx.strokeStyle = COLORS.hairline;
-    ctx.setLineDash([5, 4]);
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = COLORS.hairline; ctx.setLineDash([5, 4]); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sx(18), sy(yDiv)); ctx.lineTo(sx(1182), sy(yDiv)); ctx.stroke();
     ctx.setLineDash([]);
-    drawHaloText(ctx, "INFERENCE HIGHWAY  ·  BASE WORLD MODEL f_θ  (TRAIN & DEPLOYMENT)", sx(20), sy(yDiv - 11), COLORS.steel, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
-    drawHaloText(ctx, S === 4 ? "TRAINING-ONLY KG ENGINE  (DETACHED)" : "TRAINING-ONLY KG & PRIOR ENGINE", sx(20), sy(yDiv + 12), S === 4 ? COLORS.muted : COLORS.ochre, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
+    drawHaloText(ctx, "INFERENCE HIGHWAY  ·  BASE WORLD MODEL f_θ", sx(20), sy(yDiv - 11), COLORS.steel, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
+    drawHaloText(ctx, S === 4 ? "TRAINING-ONLY KG ENGINE  (DETACHED)" : "TRAINING-ONLY KG & PRIOR INJECTION", sx(20), sy(yDiv + 12), S === 4 ? COLORS.muted : COLORS.ochre, `600 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
     ctx.restore();
 
     // Base World Model f_θ Enclosure
     const wmAct = S >= 1;
     ctx.save();
-    drawRoundRect(sx(240), sy(14), sx(706), sy(242), 10);
-    ctx.fillStyle = "#fafcff";
-    ctx.fill();
-    ctx.strokeStyle = wmAct ? "#a8c2da" : "#e2e8f0";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
+    drawRoundRect(sx(222), sy(14), sx(728), sy(244), 10);
+    ctx.fillStyle = "#fafcff"; ctx.fill();
+    ctx.strokeStyle = wmAct ? "#a8c2da" : "#e2e8f0"; ctx.lineWidth = 1.2; ctx.stroke();
     ctx.font = `700 ${fs(8.8)}px ui-monospace, Consolas, monospace`;
-    ctx.fillStyle = wmAct ? COLORS.steel : COLORS.muted;
-    ctx.textAlign = "left";
-    ctx.fillText("BASE WORLD MODEL f_θ  (IDENTICAL ACROSS BASE / +KG / +PK/PD · ZERO EXTRA HEADS)", sx(250), sy(26));
+    ctx.fillStyle = wmAct ? COLORS.steel : COLORS.muted; ctx.textAlign = "left";
+    ctx.fillText("BASE WORLD MODEL f_θ  (0 EXTRA GRAPH HEADS)", sx(232), sy(26));
     ctx.restore();
 
-    // ---- TOP ZONE: 3 Inputs -> f_θ internals -> Outputs ----
-    drawArchBox(18, 22, 214, 90, "1. Vital Context & Mask", [["y[-15:0), mask m  [B,15,S]", COLORS.steel], ["MAP, SBP, DBP, HR, SpO2, BIS", null]], COLORS.steel, "#f4f8fd", true);
-    drawArchBox(18, 100, 214, 168, "2. Tail & 9-Wave PhysioFM", [["y0, slope s0  [B, S]", COLORS.steel], ["Causal 9-wave w_ctx (32d)", null]], COLORS.steel, "#f4f8fd", true);
-    drawArchBox(18, 178, 214, 248, "3. Drug Actions a[-15:+30)", [["Pump rates r_t, Ce_t [B,45,D]", COLORS.steel], ["log r, log Ce, Δr, on/stop", null]], COLORS.steel, "#f4f8fd", true);
+    // ---- 3 VISUAL INPUT BLOCKS (Waveforms, Vital Traces, Step-Dose Bars) ----
+    drawSlab(18, 22, 190, 90, "", "", COLORS.steel, "#f2f7fd", true);
+    drawHaloText(ctx, "Vitals y[-15:0)", sx(26), sy(32), COLORS.ink, `700 ${fs(9.8)}px -apple-system, Arial, sans-serif`, "left");
+    [[54, 4, 0, COLORS.steel], [66, 3.5, 1.4, COLORS.cardinal], [78, 2, 2.6, COLORS.ochre]].forEach(([yc, amp, ph, vc]) => {
+      ctx.save(); ctx.strokeStyle = vc; ctx.lineWidth = 1.4; ctx.beginPath();
+      for (let k = 0; k <= 30; k++) {
+        const px = sx(26 + (k / 30) * 154), py = sy(yc) + Math.sin(k * 0.4 - modelState.t * 2.4 + ph) * sy(amp);
+        if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke(); ctx.restore();
+    });
 
-    drawArchBox(254, 178, 418, 246, "ActionTokens (Pair MLP)", [["κ_d (32d) + 6 dose feats", COLORS.steel], ["→ tok_ctx, tok_fut (128d)", null]], COLORS.steel, "#f4f8fd", true);
-    drawArchBox(254, 40, 418, 102, "Enc-GRU (2L, H=192)", [["[y_ctx, m_ctx, tok_ctx]", COLORS.steel], ["Causal summary → h_pre", null]], COLORS.steel, "#f7f9fb", wmAct);
-    drawArchBox(254, 110, 418, 170, "Stat-MLP (2L, H=192)", [["[y0_norm, s0, w_ctx]", COLORS.steel], ["Waveform state → s_ctx", null]], COLORS.steel, "#f7f9fb", wmAct);
+    drawSlab(18, 100, 190, 168, "", "", COLORS.steel, "#f2f7fd", true);
+    drawHaloText(ctx, "9-Wave PhysioFM", sx(26), sy(110), COLORS.ink, `700 ${fs(9.8)}px -apple-system, Arial, sans-serif`, "left");
+    ctx.save(); ctx.strokeStyle = COLORS.steel; ctx.lineWidth = 1.4; ctx.beginPath();
+    for (let k = 0; k <= 36; k++) {
+      const u = k / 36, cyc = (u * 3 - modelState.t * 0.6) % 1;
+      const c2 = cyc < 0 ? cyc + 1 : cyc;
+      const yv = -11 * Math.exp(-Math.pow((c2 - 0.5) / 0.05, 2)) + 3 * Math.exp(-Math.pow((c2 - 0.58) / 0.04, 2));
+      const px = sx(26 + u * 96), py = sy(146 + yv);
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    [12, 20, 9, 17, 15, 23, 10, 16].forEach((bh, i) => {
+      ctx.fillStyle = i % 2 === 0 ? COLORS.steel : "#4b6b94";
+      ctx.fillRect(sx(134 + i * 6), sy(158 - bh), sx(3.8), sy(bh));
+    });
+    ctx.restore();
 
-    drawArchBox(448, 52, 588, 158, "Fusion + FiLM", [["ctx = [h_pre, s_ctx]", COLORS.steel], ["h0 = tanh(W·ctx)", null], ["(γ, β) = FiLM(ctx)", COLORS.steel], ["Modulates Dec-GRU", null]], COLORS.steel, "#f4f8fd", wmAct);
-    drawArchBox(618, 52, 774, 176, "Dec-GRU (2L, H=192)", [["[tok_fut, t/30, log t]", COLORS.steel], ["FiLM(γ, β) modulation", null], ["Init h0 → 1..30 min", null], ["Rollout → out_dec", COLORS.steel]], COLORS.steel, "#f4f8fd", wmAct);
-    drawArchBox(802, 52, 936, 176, "Head + Skip", [["MLP([out, tok_fut])", COLORS.steel], ["+ e^(-t/4)·W·s0", null], ["Residual anchor:", null], ["ŷ = y0 + σ·Δŷ", COLORS.steel]], COLORS.steel, "#f7f9fb", wmAct);
+    drawSlab(18, 178, 190, 248, "", "", COLORS.steel, "#f2f7fd", true);
+    drawHaloText(ctx, "Drugs a[-15:+30)", sx(26), sy(188), COLORS.ink, `700 ${fs(9.8)}px -apple-system, Arial, sans-serif`, "left");
+    ctx.save();
+    ctx.strokeStyle = COLORS.steel; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(sx(26), sy(236)); ctx.lineTo(sx(90), sy(236)); ctx.lineTo(sx(90), sy(210)); ctx.lineTo(sx(180), sy(210)); ctx.stroke();
+    ctx.strokeStyle = COLORS.ochre; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(sx(26), sy(222)); ctx.lineTo(sx(124), sy(222)); ctx.lineTo(sx(124), sy(231)); ctx.lineTo(sx(180), sy(231)); ctx.stroke();
+    ctx.restore();
 
-    const outT = S === 4 ? "OOD Crisis Forecast" : "Rollouts ŷ(1:30)";
-    const outL = S === 4 ? [["Pure f_θ: 0 extra params", COLORS.steel], ["0 graph latency", null]] : [["Solid: Ref ŷ_ref(r0)", COLORS.steel], ["Dash: CF ŷ_edt(r1)", COLORS.cardinal]];
-    drawArchBox(970, 26, 1182, 246, outT, outL, S === 4 ? COLORS.steel : COLORS.ink, "#f7f9fb", wmAct);
+    // ---- BASE WORLD MODEL f_θ STACKED LAYERS + OPERATORS ----
+    drawSlab(238, 44, 362, 98, "Enc-GRU", "2L · H=192", COLORS.steel, "#f7f9fc", wmAct, 1, false, 2);
+    drawSlab(238, 112, 362, 162, "Stat-MLP", "y0, s0, w_ctx", COLORS.steel, "#f7f9fc", wmAct, 1, false, 2);
+    drawSlab(238, 182, 362, 242, "ActionTokens", "κ_d + dose → 128d", COLORS.steel, "#f2f7fd", true, 1, false, 1);
 
-    // Twin factual vs counterfactual curves inside Outputs
+    drawSlab(402, 74, 514, 142, "Fusion", "→ h0, (γ, β)", COLORS.steel, "#f2f7fd", wmAct);
+    drawOpCircle(558, 148, 14, "×+", COLORS.steel, wmAct);
+    drawHaloText(ctx, "FiLM", sx(558), sy(172), wmAct ? COLORS.steel : COLORS.muted, `600 ${fs(8.8)}px ui-monospace, Consolas, monospace`);
+
+    drawSlab(606, 98, 728, 162, "Dec-GRU", "2L · 1..30m", COLORS.steel, "#f2f7fd", wmAct, 1, false, 2);
+    drawSlab(762, 98, 858, 162, "Δŷ Head", "+ skip", COLORS.steel, "#f7f9fc", wmAct);
+    drawOpCircle(910, 130, 14, "+", COLORS.steel, wmAct);
+    drawHaloText(ctx, "y0+σΔŷ", sx(910), sy(154), wmAct ? COLORS.steel : COLORS.muted, `600 ${fs(8.8)}px ui-monospace, Consolas, monospace`);
+
+    // Residual Anchor skip arc y0
+    drawFlow(192, 118, 910, 114, "#94a3b8", wmAct, wmAct ? 0.85 : 0.25, true, 540, 26, false);
+    if (wmAct) drawHaloText(ctx, "Residual Anchor y0", sx(640), sy(40), COLORS.steel, `600 ${fs(8.8)}px ui-monospace, Consolas, monospace`);
+
+    // Output visual plot
+    drawSlab(978, 28, 1182, 244, "", "", S === 4 ? COLORS.steel : COLORS.ink, "#f7f9fc", wmAct);
+    drawHaloText(ctx, S === 4 ? "OOD Forecast" : "Predicted ŷ(1:30)", sx(1080), sy(44), wmAct ? COLORS.ink : COLORS.muted, `700 ${fs(11)}px -apple-system, Arial, sans-serif`);
+    drawHaloText(ctx, S === 4 ? "0 Extra Params" : "ŷ_ref vs. ŷ_edt", sx(1080), sy(60), wmAct ? (S === 4 ? COLORS.steel : COLORS.cardinal) : COLORS.muted, `600 ${fs(8.8)}px ui-monospace, Consolas, monospace`);
     if (wmAct) {
       ctx.save();
-      const gx = sx(986), gy = sy(118), gw = sx(180), gh = sy(94);
+      const gx = sx(994), gy = sy(84), gw = sx(172), gh = sy(128);
       ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
-      const yBase = gy + gh * 0.68;
-      ctx.strokeStyle = COLORS.steel; ctx.lineWidth = 1.8;
-      ctx.beginPath();
+      const yB = gy + gh * 0.72;
+      ctx.strokeStyle = COLORS.steel; ctx.lineWidth = 1.8; ctx.beginPath();
       for (let k = 0; k <= 28; k++) {
-        const u = k / 28, px = gx + u * gw, py = yBase + Math.sin(u * 4 + modelState.t * 1.4) * 3;
+        const u = k / 28, px = gx + u * gw, py = yB + Math.sin(u * 4 + modelState.t * 1.4) * 3;
         if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.stroke();
       if (S >= 2 && S < 4) {
-        ctx.strokeStyle = COLORS.cardinal; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.8;
-        ctx.beginPath();
+        ctx.strokeStyle = COLORS.cardinal; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.8; ctx.beginPath();
         for (let k = 0; k <= 28; k++) {
-          const u = k / 28, px = gx + u * gw;
-          const py = yBase + Math.sin(u * 4 + modelState.t * 1.4) * 3 - (1 - Math.exp(-4.2 * u)) * (gh * 0.52);
+          const u = k / 28, px = gx + u * gw, py = yB + Math.sin(u * 4 + modelState.t * 1.4) * 3 - (1 - Math.exp(-4.2 * u)) * (gh * 0.56);
           if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
         }
         ctx.stroke(); ctx.setLineDash([]);
-        drawHaloText(ctx, "Δŷ_cf", gx + gw * 0.72, yBase - gh * 0.28, COLORS.cardinal, `700 ${fs(9.5)}px ui-monospace, Consolas, monospace`);
+        drawHaloText(ctx, "Δŷ_cf", gx + gw * 0.72, yB - gh * 0.30, COLORS.cardinal, `700 ${fs(9.5)}px ui-monospace, Consolas, monospace`);
       }
       ctx.restore();
     }
 
     // Forward arrows
-    drawFlow(215, 56, 252, 66, COLORS.steel, true);
-    drawFlow(215, 134, 252, 138, COLORS.steel, true);
-    drawFlow(215, 212, 252, 212, COLORS.steel, true);
-    drawFlow(419, 212, 686, 178, COLORS.steel, wmAct, wmAct ? 1 : 0.3, false, 560, 224);
-    drawFlow(419, 72, 446, 92, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
-    drawFlow(419, 140, 446, 124, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
-    drawFlow(589, 106, 616, 106, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
-    drawFlow(775, 114, 800, 114, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
-    drawFlow(937, 114, 968, 114, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(192, 58, 236, 68, COLORS.steel, true);
+    drawFlow(192, 136, 236, 136, COLORS.steel, true);
+    drawFlow(192, 212, 236, 212, COLORS.steel, true);
+    drawFlow(364, 212, 543, 152, COLORS.steel, wmAct, wmAct ? 1 : 0.3, false, 466, 214);
+    drawFlow(364, 72, 400, 96, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(364, 136, 400, 120, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(516, 98, 604, 114, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(516, 122, 545, 142, COLORS.steel, wmAct, wmAct ? 1 : 0.3, false, null, null, false);
+    drawFlow(574, 148, 604, 140, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(730, 130, 760, 130, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(860, 130, 895, 130, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
+    drawFlow(926, 130, 976, 130, COLORS.steel, wmAct, wmAct ? 1 : 0.3);
 
-    // ---- BOTTOM ZONE (Training Only): KG -> 2 Injection Paths -> L_total ----
-    const kgAlpha = S < 2 ? 0.16 : (S === 4 ? Math.max(0.16, 1 - anim * 0.84) : (S === 2 ? anim : 1));
-    const lossAlpha = S < 3 ? 0.16 : (S === 4 ? Math.max(0.16, 1 - anim * 0.84) : (S === 3 ? anim : 1));
-    const detDash = S === 4;
+    // ---- BOTTOM ZONE (4 PURE VISUAL MODULES — ZERO BULLET LISTS!) ----
+    const kgA = S < 2 ? 0.16 : (S === 4 ? Math.max(0.16, 1 - anim * 0.84) : (S === 2 ? anim : 1));
+    const lossA = S < 3 ? 0.16 : (S === 4 ? Math.max(0.16, 1 - anim * 0.84) : (S === 3 ? anim : 1));
+    const trA = Math.max(kgA * 0.65, lossA);
+    const detD = S === 4;
 
-    drawArchBox(18, 306, 248, 502, "Audited Clinical KG",
-      [["985 nodes · 3,964 edges · 152 H", COLORS.ochre], ["", null],
-       ["1. Action Priors (243)", COLORS.ink], ["   sign + receptor + k_1m", null],
-       ["2. Context Gates (33)", COLORS.ink], ["   dose / vital / co-drug", null],
-       ["3. Trajectory Constraints (8)", COLORS.ink], ["   order, range & J_KG cone", null],
-       ["(+ Optional PK/PD Hill)", COLORS.muted]],
-      COLORS.ochre, "#fdf8ee", S === 2 || S === 3, kgAlpha, detDash, "SOURCE KNOWLEDGE");
+    // K1: Mini Visual KG Graph
+    drawSlab(18, 308, 236, 502, "", "", COLORS.ochre, "#fdf7ec", S === 2 || S === 3, kgA, detD);
+    ctx.save(); ctx.globalAlpha = kgA;
+    drawHaloText(ctx, "Audited Clinical KG", sx(127), sy(324), COLORS.ink, `700 ${fs(11)}px -apple-system, Arial, sans-serif`);
+    drawHaloText(ctx, "985 nodes · 3,964 edges", sx(127), sy(340), COLORS.ochre, `600 ${fs(8.6)}px ui-monospace, Consolas, monospace`);
+    const gn = { d1: [58, 384, COLORS.steel, "NE"], d2: [58, 444, COLORS.steel, "Epi"], r1: [118, 380, "#4b6b94", "α1"], r2: [118, 444, "#4b6b94", "β2"], v1: [188, 388, COLORS.cardinal, "MAP"], v2: [188, 444, COLORS.cardinal, "DBP"], c: [124, 480, COLORS.ochre, "Shock"] };
+    drawRoundRect(sx(38), sy(358), sx(172), sy(134), 14); ctx.strokeStyle = COLORS.ochre; ctx.lineWidth = 1.2; ctx.stroke();
+    [["d1","r1",COLORS.steel],["r1","v1",COLORS.steel],["d2","r1",COLORS.steel],["d2","r2",COLORS.steel],["r2","v2",COLORS.cardinal],["r1","v2",COLORS.steel]].forEach(([u,v,ec]) => {
+      ctx.strokeStyle = ec; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(sx(gn[u][0]), sy(gn[u][1])); ctx.lineTo(sx(gn[v][0]), sy(gn[v][1])); ctx.stroke();
+    });
+    Object.values(gn).forEach(([nx, ny, nc, nl]) => {
+      ctx.beginPath(); ctx.arc(sx(nx), sy(ny), sx(10.5), 0, Math.PI * 2); ctx.fillStyle = nc; ctx.fill();
+      ctx.font = `700 ${fs(8)}px ui-monospace, Consolas, monospace`; ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(nl, sx(nx), sy(ny));
+    });
+    ctx.restore();
 
-    drawArchBox(278, 306, 574, 502, "3-Branch Counterfactual (L_act)",
-      [["Sample drug d (incl. held-out!)", COLORS.ochre],
-       ["3 clones through SAME f_θ:", COLORS.ink],
-       [" r_zero | r_ref(r0) | r_edt(r1)", COLORS.steel],
-       ["Δŷ_cf = ŷ_edt − ŷ_ref", COLORS.cardinal], ["", null],
-       ["Align sign·Δŷ_cf in gated band:", COLORS.ink],
-       [" g(y0,a)·[lo(t), hi(t)]", COLORS.ochre],
-       ["+ Monotone, sat & steady L_eq", null]],
-      COLORS.ochre, "#fdf8ee", S === 2 || S === 3, kgAlpha, detDash, "INJECTION PATH 1 · ACTION + GATE");
+    // K2: Visual 3-Branch Probe + Gated Kinetic Corridor (L_act)
+    drawSlab(272, 308, 606, 502, "", "", COLORS.ochre, "#fdf7ec", S === 2 || S === 3, kgA, detD);
+    ctx.save(); ctx.globalAlpha = kgA;
+    drawHaloText(ctx, "Action Prior + Context Gate (L_act)", sx(439), sy(324), COLORS.ink, `700 ${fs(11)}px -apple-system, Arial, sans-serif`);
+    drawHaloText(ctx, "243 Priors · 33 Gates g(y0, a)", sx(439), sy(340), COLORS.ochre, `600 ${fs(8.6)}px ui-monospace, Consolas, monospace`);
+    [[392, "r_zero", COLORS.muted, 396, 396], [428, "r_ref", COLORS.steel, 428, 428], [464, "r_edt", COLORS.cardinal, 470, 450]].forEach(([yc, lb, col, yr, yl]) => {
+      drawHaloText(ctx, lb, sx(286), sy(yc), col, `600 ${fs(8.6)}px ui-monospace, Consolas, monospace`, "left");
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.beginPath();
+      ctx.moveTo(sx(324), sy(yr)); ctx.lineTo(sx(360), sy(yr)); ctx.lineTo(sx(360), sy(yl)); ctx.lineTo(sx(400), sy(yl)); ctx.stroke();
+    });
+    drawHaloText(ctx, "→", sx(418), sy(428), COLORS.ochre, `700 ${fs(14)}px Arial, sans-serif`);
+    // Shaded kinetic corridor
+    const cx0 = sx(438), cy0 = sy(368), cw = sx(150), ch = sy(102);
+    ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(cx0, cy0 + ch); ctx.lineTo(cx0 + cw, cy0 + ch); ctx.stroke();
+    ctx.fillStyle = "rgba(217,155,58,0.22)"; ctx.beginPath();
+    for (let k = 0; k <= 24; k++) { const u = k / 24, e = 1 - Math.exp(-4 * u); if (k === 0) ctx.moveTo(cx0 + u * cw, cy0 + ch - e * ch * 0.86); else ctx.lineTo(cx0 + u * cw, cy0 + ch - e * ch * 0.86); }
+    for (let k = 24; k >= 0; k--) { const u = k / 24, e = 1 - Math.exp(-4 * u); ctx.lineTo(cx0 + u * cw, cy0 + ch - e * ch * 0.44); }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = COLORS.cardinal; ctx.lineWidth = 2; ctx.beginPath();
+    for (let k = 0; k <= 24; k++) { const u = k / 24, e = 1 - Math.exp(-4 * u); if (k === 0) ctx.moveTo(cx0 + u * cw, cy0 + ch - e * ch * 0.65); else ctx.lineTo(cx0 + u * cw, cy0 + ch - e * ch * 0.65); }
+    ctx.stroke();
+    drawHaloText(ctx, "g·[lo, hi]", cx0 + cw - sx(4), cy0 + sy(12), COLORS.ochre, `600 ${fs(8.4)}px ui-monospace, Consolas, monospace`, "right");
+    drawHaloText(ctx, "Δŷ_cf", cx0 + cw - sx(4), cy0 + sy(48), COLORS.cardinal, `700 ${fs(9)}px ui-monospace, Consolas, monospace`, "right");
+    ctx.restore();
 
-    drawArchBox(604, 306, 862, 502, "Trajectory Constraints (L_traj)",
-      [["Directly on rollout ŷ(1:30):", COLORS.ink], ["", null],
-       ["• Order: SBP > MAP > DBP", COLORS.ochre],
-       ["• Order: PAP_s > PAP_m > PAP_d", null],
-       ["• Range: SpO2 ∈ [70, 100]", null],
-       ["• Delta: CVP-MAP, MAP-HR", null],
-       ["• Latent Cone: Δŷ ∈ Span(J_KG)", COLORS.ochre],
-       ["• 1-min Smoothness", null]],
-      COLORS.ochre, "#fdf8ee", S === 3, Math.max(kgAlpha * 0.65, lossAlpha), detDash, "INJECTION PATH 2 · ROLLOUT");
+    // K3: Visual Trajectory Physics (SBP > MAP > DBP + J_KG Cone)
+    drawSlab(642, 308, 892, 502, "", "", COLORS.ochre, "#fdf7ec", S === 3, trA, detD);
+    ctx.save(); ctx.globalAlpha = trA;
+    drawHaloText(ctx, "Trajectory Physics (L_traj)", sx(767), sy(324), COLORS.ink, `700 ${fs(11)}px -apple-system, Arial, sans-serif`);
+    drawHaloText(ctx, "Order + Latent Cone J_KG", sx(767), sy(340), COLORS.ochre, `600 ${fs(8.6)}px ui-monospace, Consolas, monospace`);
+    [[388, "SBP", COLORS.steel], [420, "MAP", COLORS.ink], [452, "DBP", "#4b6b94"]].forEach(([yc, lb, col]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let k = 0; k <= 16; k++) { const px = sx(658 + (k / 16) * 96), py = sy(yc) + Math.sin(k * 0.45 + modelState.t) * sy(2.5); if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+      ctx.stroke();
+      drawHaloText(ctx, lb, sx(660), sy(yc - 9), col, `600 ${fs(8)}px ui-monospace, Consolas, monospace`, "left");
+    });
+    // Cone
+    ctx.fillStyle = "rgba(217,155,58,0.22)";
+    ctx.beginPath(); ctx.moveTo(sx(788), sy(466)); ctx.lineTo(sx(874), sy(378)); ctx.lineTo(sx(876), sy(448)); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = COLORS.ochre; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(sx(788), sy(466)); ctx.lineTo(sx(874), sy(378)); ctx.moveTo(sx(788), sy(466)); ctx.lineTo(sx(876), sy(448)); ctx.stroke();
+    drawFlow(788, 466, 852, 412, COLORS.cardinal, S === 3, trA, false, null, null, false);
+    drawHaloText(ctx, "Span(J_KG)", sx(836), sy(482), COLORS.ochre, `600 ${fs(8.4)}px ui-monospace, Consolas, monospace`);
+    ctx.restore();
 
-    drawArchBox(892, 306, 1182, 502, "All-in-Loss Objective",
-      [["L_tot = L_data + λL_act + λL_traj", COLORS.cardinal], ["", null],
-       ["• L_data: Factual MAE (y_true)", COLORS.ink],
-       ["• L_act:  KG Action + Gate + L_eq", COLORS.ochre],
-       ["• L_traj: Order, Range & J_KG", COLORS.ochre], ["", null],
-       ["Knowledge flows ONLY via dL/dθ", COLORS.cardinal],
-       ["into Base World Model f_θ.", COLORS.ink]],
-      COLORS.cardinal, "#fdf3f3", S === 3, lossAlpha, detDash, "UNIFIED BACKPROPAGATION");
+    // K4: Compact Visual Loss Pills (L_total)
+    drawSlab(928, 308, 1182, 502, "", "", COLORS.cardinal, "#fdf2f2", S === 3, lossA, detD);
+    ctx.save(); ctx.globalAlpha = lossA;
+    drawHaloText(ctx, "All-in-Loss Objective", sx(1055), sy(326), COLORS.ink, `700 ${fs(11)}px -apple-system, Arial, sans-serif`);
+    [[370, "L_data", "Factual MAE", COLORS.steel], [412, "λ·L_act", "KG + Gate", COLORS.ochre], [454, "λ·L_traj", "Order + Cone", COLORS.ochre]].forEach(([yc, tg, ds, col]) => {
+      drawRoundRect(sx(946), sy(yc - 13), sx(64), sy(26), 6);
+      ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.stroke();
+      drawHaloText(ctx, tg, sx(978), sy(yc), col, `700 ${fs(9)}px ui-monospace, Consolas, monospace`);
+      drawHaloText(ctx, ds, sx(1020), sy(yc), COLORS.ink2, `500 ${fs(9.5)}px ui-monospace, Consolas, monospace`, "left");
+    });
+    drawHaloText(ctx, "L_tot = L_data + λL_act + λL_traj", sx(1055), sy(486), COLORS.cardinal, `700 ${fs(9.2)}px ui-monospace, Consolas, monospace`);
+    ctx.restore();
 
-    drawFlow(249, 404, 276, 404, COLORS.ochre, S === 2 || S === 3, kgAlpha, detDash);
-    drawFlow(575, 404, 602, 404, COLORS.ochre, S === 3, lossAlpha, detDash);
-    drawFlow(863, 404, 890, 404, COLORS.cardinal, S === 3, lossAlpha, detDash);
-
-    // Upward 3xB counterfactual query arrow: K2 -> ActionTokens
-    drawFlow(340, 304, 340, 248, COLORS.ochre, S === 2 || S === 3, kgAlpha, true);
-    if (S === 2 || S === 3) {
-      drawHaloText(ctx, "3×B Queries (r_zero, r_ref, r_edt)", sx(348), sy(292), COLORS.ochre, `700 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
-    }
-
-    // Downward forecast eval arrow: Outputs -> L_total & L_traj
-    drawFlow(1076, 248, 1076, 304, COLORS.cardinal, S === 3, lossAlpha, true);
-    drawFlow(1015, 248, 748, 304, COLORS.ochre, S === 3, lossAlpha, true, 900, 272);
-
-    // Curved crimson Backprop Gradient Highway: L_total -> Base World Model f_θ!
+    // Bottom & Cross-lane Injection Arrows
+    drawFlow(238, 404, 270, 404, COLORS.ochre, S === 2 || S === 3, kgA, detD);
+    drawFlow(608, 404, 640, 404, COLORS.ochre, S === 3, lossA, detD);
+    drawFlow(894, 404, 926, 404, COLORS.cardinal, S === 3, lossA, detD);
+    drawFlow(316, 306, 316, 244, COLORS.ochre, S === 2 || S === 3, kgA, true);
+    if (S === 2 || S === 3) drawHaloText(ctx, "3×B Probes → f_θ", sx(324), sy(294), COLORS.ochre, `700 ${fs(9.2)}px ui-monospace, Consolas, monospace`, "left");
+    drawFlow(1080, 246, 1080, 306, COLORS.cardinal, S === 3, lossA, true);
+    drawFlow(1018, 246, 784, 306, COLORS.ochre, S === 3, lossA, true, 916, 274);
     if (S >= 3) {
-      drawFlow(922, 304, 610, 258, COLORS.cardinal, S === 3, lossAlpha, true, 748, 268);
-      if (S === 3) {
-        drawHaloText(ctx, "Backprop Gradients  dL_total / dθ  →  f_θ", sx(756), sy(264), COLORS.cardinal, `700 ${fs(10.0)}px -apple-system, Arial, sans-serif`);
-      }
+      drawFlow(950, 306, 600, 258, COLORS.cardinal, S === 3, lossA, true, 756, 276);
+      if (S === 3) drawHaloText(ctx, "Backprop Gradients  dL / dθ  →  f_θ", sx(772), sy(266), COLORS.cardinal, `700 ${fs(10.2)}px -apple-system, Arial, sans-serif`);
     }
 
     if (S === 4) {
-      ctx.save();
-      ctx.globalAlpha = anim;
-      drawRoundRect(sx(300), sy(386), sx(600), sy(36), 8);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-      ctx.strokeStyle = COLORS.cardinal;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      ctx.save(); ctx.globalAlpha = anim;
+      drawRoundRect(sx(310), sy(386), sx(580), sy(36), 8);
+      ctx.fillStyle = "#ffffff"; ctx.fill();
+      ctx.strokeStyle = COLORS.cardinal; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.font = `700 ${fs(10.8)}px -apple-system, Arial, sans-serif`;
-      ctx.fillStyle = COLORS.cardinal;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("× DETACHED AT TEST TIME  —  0 EXTRA INPUTS · 0 EXTRA PARAMS · 0 GRAPH LATENCY", sx(600), sy(404));
+      ctx.fillStyle = COLORS.cardinal; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("× DETACHED AT TEST TIME  —  0 EXTRA PARAMS · 0 GRAPH LATENCY", sx(600), sy(404));
       ctx.restore();
     }
   }
