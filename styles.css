@@ -142,6 +142,8 @@ html, body {
   margin-bottom: 22px;
 }
 #pipelineCanvas { width: 100%; height: 100%; display: block; }
+#view-model .pipeline-stage-wrap { height: 550px; }
+#modelCanvas { width: 100%; height: 100%; display: block; }
 .pipe-legend-strip {
   position: absolute; bottom: 8px; left: 8px; display: flex; gap: 18px;
   font-size: 11.5px; color: var(--ink-muted); background: transparent;
