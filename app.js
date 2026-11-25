@@ -69,13 +69,12 @@
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + viewName));
     if (viewName === "explorer") resizeGraphCanvas();
     else if (viewName === "pipeline") resizePipeCanvas();
-    else if (viewName === "conflicts") resizeReversalCanvas();
     else if (viewName === "model") resizeModelCanvas();
   }
   document.querySelectorAll(".nav-tab").forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
 
   // Fullscreen Presentation Mode + Keyboard Slide Navigation (ArrowLeft / ArrowRight)
-  const VIEW_ORDER = ["pipeline", "explorer", "ledger", "conflicts", "model"];
+  const VIEW_ORDER = ["explorer", "pipeline", "model"];
   const btnPresent = document.getElementById("btnPresent");
   if (btnPresent) {
     btnPresent.addEventListener("click", () => {
@@ -1527,11 +1526,12 @@
   ];
 
   const revCanvas = document.getElementById("reversalCanvas");
-  const revCtx = revCanvas.getContext("2d");
+  const revCtx = revCanvas ? revCanvas.getContext("2d") : null;
   const revState = { caseIdx: 0, regimeIdx: 0, t: 0, w: 600, h: 250 };
 
   function initReversalLab() {
     const tabs = document.getElementById("reversalDrugTabs");
+    if (!tabs || !revCanvas) return;
     tabs.innerHTML = REVERSAL_CASES.map((c, i) => `<button class="pill-btn ${i === 0 ? "active" : ""}" data-rc="${i}">${esc(c.title)}</button>`).join("");
     tabs.querySelectorAll(".pill-btn").forEach((b) => b.addEventListener("click", () => {
       revState.caseIdx = Number(b.dataset.rc); revState.regimeIdx = 0;
@@ -1568,6 +1568,7 @@
   }
 
   function resizeReversalCanvas() {
+    if (!revCanvas || !revCtx) return;
     const rect = revCanvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     revState.w = Math.max(400, rect.width); revState.h = Math.max(230, rect.height);
@@ -1576,7 +1577,7 @@
   }
 
   function drawReversalFrame() {
-    if (ACTIVE_VIEW !== "conflicts") return;
+    if (!revCanvas || !revCtx || ACTIVE_VIEW !== "conflicts") return;
     const ctx = revCtx, W = revState.w, H = revState.h;
     revState.t = (revState.t + 0.012) % 1;
     ctx.clearRect(0, 0, W, H);
@@ -1800,11 +1801,10 @@
   function tick() {
     drawPipelineFrame();
     drawGraphFrame();
-    drawReversalFrame();
     drawModelFrame();
     requestAnimationFrame(tick);
   }
-  window.addEventListener("resize", () => { resizePipeCanvas(); resizeGraphCanvas(); resizeReversalCanvas(); resizeModelCanvas(); });
+  window.addEventListener("resize", () => { resizePipeCanvas(); resizeGraphCanvas(); resizeModelCanvas(); });
 
   // Progressive-Disclosure Floating Controls (Scale Pills, Guided Stories, Slide-Over Drawers)
   const leftDrawer = document.getElementById("leftToolsDrawer");
@@ -1863,14 +1863,10 @@
   initPathTracer();
   selectPreset("vasopressors", true);
   syncExplorerPills("vasopressors");
-  initReversalLab();
   renderFunnel();
   renderLedgerTable();
-  renderConflictsTable();
-  renderClaimsCrossCheck();
   resizePipeCanvas();
   resizeGraphCanvas();
-  resizeReversalCanvas();
   resizeModelCanvas();
   requestAnimationFrame(tick);
 })();

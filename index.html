@@ -24,11 +24,8 @@
       <button class="nav-tab" data-view="pipeline" role="tab">
         <span class="tab-idx">02</span><span>Construction</span>
       </button>
-      <button class="nav-tab" data-view="conflicts" role="tab">
-        <span class="tab-idx">03</span><span>Quality &amp; Conflicts</span>
-      </button>
       <button class="nav-tab" data-view="model" role="tab">
-        <span class="tab-idx">04</span><span>World Model</span>
+        <span class="tab-idx">03</span><span>World Model</span>
       </button>
     </nav>
 
@@ -226,70 +223,7 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- VIEW 04: CONFLICT RESOLUTION LAB                             -->
-    <!-- ============================================================ -->
-    <section id="view-conflicts" class="view">
-      <div class="page-head">
-        <div>
-          <h1 class="page-title">Conflict Resolution Lab</h1>
-          <p class="page-desc">Clinical pharmacology contains genuine dose reversals, shock phases, and post-resuscitation confounding. The graph never silently overwrites a physiological sign.</p>
-        </div>
-      </div>
-
-      <div class="lab-section">
-        <div class="lab-section-head">
-          <div>
-            <div class="col-kicker">Conflict Type 01 · Dose &amp; Phase Sign Reversals</div>
-            <h2 class="section-h2">Interactive Simulator: Switch Clinical Regime &amp; Watch the Active Edge Flip</h2>
-          </div>
-          <div id="reversalDrugTabs" class="pill-tabs"></div>
-        </div>
-
-        <div class="reversal-sim">
-          <div class="sim-stage">
-            <canvas id="reversalCanvas"></canvas>
-            <div class="sim-toggle-bar">
-              <button id="btnRegimeA" class="regime-btn active"></button>
-              <span class="regime-vs">⇄</span>
-              <button id="btnRegimeB" class="regime-btn"></button>
-            </div>
-          </div>
-          <div class="sim-explain" id="reversalExplain"></div>
-        </div>
-      </div>
-
-      <details class="clean-accordion">
-        <summary>Inspect All 17 Empirical Cohort Conflicts &amp; Competing Pathways</summary>
-        <div class="lab-section" style="margin-top:14px">
-          <div class="lab-section-head">
-            <div>
-              <div class="col-kicker">Conflict Type 02 · Empirical Cohorts vs. Physiology (All 17 Logged Conflicts)</div>
-              <h2 class="section-h2">Non-Overwrite Policy: 7 Post-Treatment Artefacts · 3 Subgroup-Specific · 7 Opposing Cohorts</h2>
-            </div>
-            <div class="pill-tabs" id="conflictKindTabs">
-              <button class="pill-btn active" data-ckind="all">All (17)</button>
-              <button class="pill-btn" data-ckind="apparent">Apparent Artefact (7)</button>
-              <button class="pill-btn" data-ckind="conditional">Conditional (3)</button>
-              <button class="pill-btn" data-ckind="contradicting">Contradicting (7)</button>
-            </div>
-          </div>
-          <div id="conflictsTableWrap" class="ledger-table-wrap"></div>
-        </div>
-
-        <div class="lab-section">
-          <div class="lab-section-head">
-            <div>
-              <div class="col-kicker">Conflict Type 03 · Competing Physiological Pathways &amp; Clinical Scope</div>
-              <h2 class="section-h2">Direct vs. Reflex Chains &amp; Phase-Dependent Disagreements Inside the KG</h2>
-            </div>
-          </div>
-          <div id="claimsCrossCheck" class="claims-grid"></div>
-        </div>
-      </details>
-    </section>
-
-    <!-- ============================================================ -->
-    <!-- VIEW 05: CLINICAL WORLD MODEL ARCHITECTURE                   -->
+    <!-- VIEW 03: CLINICAL WORLD MODEL ARCHITECTURE                   -->
     <!-- ============================================================ -->
     <section id="view-model" class="view">
       <div class="page-head">
