@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinical Physiological KG &amp; World Model · Interactive Navigator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Minimal Academic Header -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div class="brand-text">
+        <span class="brand-title">Clinical Physiological KG</span>
+        <span class="brand-sub">985 Nodes · 3,964 Edges · 152 Hyperedges · 17 Logged Conflicts</span>
+      </div>
+    </div>
+
+    <nav class="topnav" role="tablist">
+      <button class="nav-tab active" data-view="pipeline" role="tab">
+        <span class="tab-idx">01</span><span>KG Construction</span>
+      </button>
+      <button class="nav-tab" data-view="explorer" role="tab">
+        <span class="tab-idx">02</span><span>Graph Explorer</span>
+      </button>
+      <button class="nav-tab" data-view="ledger" role="tab">
+        <span class="tab-idx">03</span><span>Keep vs. Drop</span>
+      </button>
+      <button class="nav-tab" data-view="conflicts" role="tab">
+        <span class="tab-idx">04</span><span>Conflict Lab</span>
+      </button>
+      <button class="nav-tab" data-view="model" role="tab">
+        <span class="tab-idx">05</span><span>End-to-End Model</span>
+      </button>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="global-search-wrap">
+        <input id="globalSearch" type="text" placeholder="Search 985 nodes (e.g. norepinephrine, MAP)..." autocomplete="off" />
+        <div id="globalSearchResults" class="search-dropdown hidden"></div>
+      </div>
+      <button id="btnPresent" class="btn-ghost btn-sm" title="Fullscreen presentation mode (use Left/Right arrow keys)">Present</button>
+    </div>
+  </header>
+
+  <main class="main-shell">
+    <!-- ============================================================ -->
+    <!-- VIEW 01: CONTINUOUS LIVING GRAPH CONSTRUCTION                -->
+    <!-- ============================================================ -->
+    <section id="view-pipeline" class="view active">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">How the Clinical Physiological KG Is Built — Step by Step</h1>
+          <p class="page-desc">Watch the exact same physiological graph grow, prune unsupported links, attach verified clinical measurements, log empirical conflicts without overwriting signs, split dose reversals, and pass final structural cleanup.</p>
+        </div>
+        <div class="pipe-controls">
+          <button id="btnPipePlay" class="btn-primary">▶ Play</button>
+          <button id="btnPipePrev" class="btn-ghost">← Prev</button>
+          <button id="btnPipeNext" class="btn-ghost">Next →</button>
+        </div>
+      </div>
+
+      <!-- Single Connected Stepper Bar (Zero Redundancy) -->
+      <div id="stageStepper" class="stepper"></div>
+
+      <!-- Spacious Pure-White Continuous Living Graph Canvas -->
+      <div class="pipeline-stage-wrap">
+        <canvas id="pipelineCanvas"></canvas>
+        <div class="pipe-legend-strip">
+          <span class="leg-item"><i class="dot dot-blue"></i>Increases (+1) / Verified</span>
+          <span class="leg-item"><i class="dot dot-red"></i>Decreases (−1) / Removed / Conflict</span>
+          <span class="leg-item"><i class="dot dot-ochre"></i>Salvaged / Context Rule / Audit Flag</span>
+        </div>
+      </div>
+
+      <!-- Clean 3-Column Editorial Breakdown (Zero Boxes, Plain Accurate English) -->
+      <div class="pipe-detail-grid">
+        <div class="detail-col">
+          <div class="col-kicker">01 · What Happens &amp; Sources</div>
+          <h2 id="stageTitle" class="stage-heading"></h2>
+          <p id="stageSummary" class="stage-summary-text"></p>
+          <div id="stageSources" class="source-inline-row"></div>
+          <ul id="stageInputs" class="clean-list mono-list"></ul>
+        </div>
+        <div class="detail-col">
+          <div class="col-kicker">02 · Inclusion, Exclusion &amp; Conflict Rules</div>
+          <ul id="stageRules" class="clean-list"></ul>
+        </div>
+        <div class="detail-col">
+          <div class="col-kicker">03 · Concrete Before → After &amp; Scale</div>
+          <p id="stageOutput" class="stage-output-text"></p>
+          <div id="stageSampleIO" class="io-diff-block"></div>
+          <div id="stageMetrics" class="inline-metrics"></div>
+          <div class="stage-jump-wrap">
+            <span class="jump-label">Inspect representative nodes in Graph Explorer:</span>
+            <div id="stageHighlightLinks" class="link-pills"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 02: INTERACTIVE GRAPH EXPLORER                          -->
+    <!-- ============================================================ -->
+    <section id="view-explorer" class="view">
+      <div class="explorer-layout">
+        <aside class="rail-left">
+          <div class="rail-section">
+            <div class="rail-title">Curated Clinical Views</div>
+            <div id="presetList" class="preset-list"></div>
+          </div>
+
+          <div class="rail-section">
+            <div class="rail-title">Mechanistic Path Tracer</div>
+            <div class="path-form">
+              <label class="mini-label">Source (Drug / State)</label>
+              <select id="pathSrc"></select>
+              <label class="mini-label">Target (Vital / Physiology)</label>
+              <select id="pathDst"></select>
+              <div class="path-btns">
+                <button id="btnTracePath" class="btn-primary btn-sm">Trace Paths</button>
+                <button id="btnClearPath" class="btn-ghost btn-sm">Clear</button>
+              </div>
+              <div id="pathSummary" class="path-summary hidden"></div>
+            </div>
+          </div>
+
+          <div class="rail-section">
+            <div class="rail-title">Edge Filters</div>
+            <div class="filter-group">
+              <label class="chk-row"><input type="checkbox" id="fltPos" checked /> <i class="line-swatch sw-pos"></i>Increases (+1)</label>
+              <label class="chk-row"><input type="checkbox" id="fltNeg" checked /> <i class="line-swatch sw-neg"></i>Decreases (−1)</label>
+              <label class="chk-row"><input type="checkbox" id="fltOther" checked /> <i class="line-swatch sw-oth"></i>Receptor / Ontology / Assoc</label>
+              <label class="chk-row"><input type="checkbox" id="fltPulses" checked /> Animated causal pulses</label>
+              <label class="chk-row"><input type="checkbox" id="fltLabels" checked /> Show key labels</label>
+            </div>
+          </div>
+
+          <div class="rail-section">
+            <div class="rail-title">Node Types</div>
+            <div class="node-legend-grid" id="nodeLegend"></div>
+          </div>
+        </aside>
+
+        <div class="graph-stage">
+          <canvas id="graphCanvas"></canvas>
+          <div class="graph-hud-top">
+            <span id="graphStatusText" class="hud-stat"></span>
+            <div class="hud-actions">
+              <button id="btnZoomIn" class="hud-btn" title="Zoom In">+</button>
+              <button id="btnZoomOut" class="hud-btn" title="Zoom Out">−</button>
+              <button id="btnZoomReset" class="hud-btn" title="Fit View">Fit</button>
+              <button id="btnExportPng" class="hud-btn" title="Download high-res PNG of current view">Export PNG</button>
+            </div>
+          </div>
+          <div class="minimap-wrap" title="Click or drag to pan">
+            <canvas id="minimapCanvas" width="168" height="122"></canvas>
+            <span class="minimap-lbl">NAVIGATOR</span>
+          </div>
+          <div id="graphTooltip" class="graph-tooltip hidden"></div>
+          <div class="graph-hud-bottom">
+            Scroll to zoom · Drag canvas or minimap to pan · Drag any node · Click node or edge for verbatim provenance
+          </div>
+        </div>
+
+        <aside id="inspectorDrawer" class="rail-right">
+          <div class="inspector-head">
+            <div class="right-tabs">
+              <button id="tabRightStats" class="rtab active">Statistics</button>
+              <button id="tabRightInsp" class="rtab">Inspector</button>
+            </div>
+            <button id="btnResetSelection" class="btn-link">Reset Focus</button>
+          </div>
+          <div id="inspectorBody" class="inspector-body"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 03: KEEP VS DROP AUDIT LEDGER                           -->
+    <!-- ============================================================ -->
+    <section id="view-ledger" class="view">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Keep vs. Drop Audit Ledger</h1>
+          <p class="page-desc">Every inclusion, correction, and rejection is enforced by explicit programmatic rules and an independent second-pass check against primary clinical texts.</p>
+        </div>
+      </div>
+
+      <div id="funnelStrip" class="funnel-strip"></div>
+
+      <div class="subtab-bar">
+        <button class="subtab active" data-ledger="dropped">Removed (Unsupported) <em id="cntDropped"></em></button>
+        <button class="subtab" data-ledger="corrected">Corrected / Salvaged <em id="cntCorrected"></em></button>
+        <button class="subtab" data-ledger="flagged">Excluded from Training (Flagged: 112) <em id="cntFlagged"></em></button>
+        <button class="subtab" data-ledger="v6funnel">FDA Mining Funnel (877 → 43)</button>
+        <button class="subtab" data-ledger="v8clean">Final Structural Audit</button>
+        <input id="ledgerSearch" class="subtab-search" type="text" placeholder="Filter records..." />
+      </div>
+
+      <div id="ledgerContent" class="ledger-table-wrap"></div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 04: CONFLICT RESOLUTION LAB                             -->
+    <!-- ============================================================ -->
+    <section id="view-conflicts" class="view">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Conflict Resolution Lab</h1>
+          <p class="page-desc">Clinical pharmacology contains genuine dose reversals, shock phases, and post-resuscitation confounding. The graph never silently overwrites a physiological sign.</p>
+        </div>
+      </div>
+
+      <div class="lab-section">
+        <div class="lab-section-head">
+          <div>
+            <div class="col-kicker">Conflict Type 01 · Dose &amp; Phase Sign Reversals</div>
+            <h2 class="section-h2">Interactive Simulator: Switch Clinical Regime &amp; Watch the Active Edge Flip</h2>
+          </div>
+          <div id="reversalDrugTabs" class="pill-tabs"></div>
+        </div>
+
+        <div class="reversal-sim">
+          <div class="sim-stage">
+            <canvas id="reversalCanvas"></canvas>
+            <div class="sim-toggle-bar">
+              <button id="btnRegimeA" class="regime-btn active"></button>
+              <span class="regime-vs">⇄</span>
+              <button id="btnRegimeB" class="regime-btn"></button>
+            </div>
+          </div>
+          <div class="sim-explain" id="reversalExplain"></div>
+        </div>
+      </div>
+
+      <div class="lab-section">
+        <div class="lab-section-head">
+          <div>
+            <div class="col-kicker">Conflict Type 02 · Empirical Cohorts vs. Physiology (All 17 Logged Conflicts)</div>
+            <h2 class="section-h2">Non-Overwrite Policy: 7 Post-Treatment Artefacts · 3 Subgroup-Specific · 7 Opposing Cohorts</h2>
+          </div>
+          <div class="pill-tabs" id="conflictKindTabs">
+            <button class="pill-btn active" data-ckind="all">All (17)</button>
+            <button class="pill-btn" data-ckind="apparent">Apparent Artefact (7)</button>
+            <button class="pill-btn" data-ckind="conditional">Conditional (3)</button>
+            <button class="pill-btn" data-ckind="contradicting">Contradicting (7)</button>
+          </div>
+        </div>
+        <div id="conflictsTableWrap" class="ledger-table-wrap"></div>
+      </div>
+
+      <div class="lab-section">
+        <div class="lab-section-head">
+          <div>
+            <div class="col-kicker">Conflict Type 03 · Competing Physiological Pathways &amp; Clinical Scope</div>
+            <h2 class="section-h2">Direct vs. Reflex Chains &amp; Phase-Dependent Disagreements Inside the KG</h2>
+          </div>
+        </div>
+        <div id="claimsCrossCheck" class="claims-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 05: END-TO-END CLINICAL WORLD MODEL ANIMATION           -->
+    <!-- ============================================================ -->
+    <section id="view-model" class="view">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">How Our End-to-End Clinical World Model Works — Step by Step</h1>
+          <p class="page-desc">Watch how patient vitals, clinical interventions, and the audited 985-node Knowledge Graph come together during All-in-Loss counterfactual training—and detach cleanly for zero-overhead OOD deployment.</p>
+        </div>
+        <div class="pipe-controls">
+          <button id="btnModelPlay" class="btn-primary">▶ Play</button>
+          <button id="btnModelPrev" class="btn-ghost">← Prev</button>
+          <button id="btnModelNext" class="btn-ghost">Next →</button>
+        </div>
+      </div>
+
+      <div id="modelStepper" class="stepper stepper-5"></div>
+
+      <div class="pipeline-stage-wrap">
+        <canvas id="modelCanvas"></canvas>
+        <div class="pipe-legend-strip">
+          <span class="leg-item"><i class="dot dot-blue"></i>Forward Rollout / Active Flow</span>
+          <span class="leg-item"><i class="dot dot-ochre"></i>KG Diffusion &amp; Context Gate (Training Only)</span>
+          <span class="leg-item"><i class="dot dot-red"></i>Counterfactual &amp; Trajectory Loss Gradients</span>
+        </div>
+      </div>
+
+      <div class="pipe-detail-grid">
+        <div class="detail-col">
+          <div class="col-kicker">01 · Stage Role &amp; Inputs</div>
+          <h2 id="modelStageTitle" class="stage-heading"></h2>
+          <p id="modelStageSummary" class="stage-summary-text"></p>
+        </div>
+        <div class="detail-col">
+          <div class="col-kicker">02 · Core Mechanism</div>
+          <ul id="modelStageBullets" class="clean-list"></ul>
+        </div>
+        <div class="detail-col">
+          <div class="col-kicker">03 · Key Design Guarantee</div>
+          <div id="modelStageIO" class="io-diff-block"></div>
+          <p id="modelStageGuarantee" class="stage-output-text"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
