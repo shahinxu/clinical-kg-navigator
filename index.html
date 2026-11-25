@@ -263,13 +263,13 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- VIEW 05: END-TO-END CLINICAL WORLD MODEL ANIMATION           -->
+    <!-- VIEW 05: CLINICAL WORLD MODEL ARCHITECTURE                   -->
     <!-- ============================================================ -->
     <section id="view-model" class="view">
       <div class="page-head">
         <div>
-          <h1 class="page-title">How Our End-to-End Clinical World Model Works — Step by Step</h1>
-          <p class="page-desc">Watch how patient vitals, clinical interventions, and the audited 985-node Knowledge Graph come together during All-in-Loss counterfactual training—and detach cleanly for zero-overhead OOD deployment.</p>
+          <h1 class="page-title">Clinical World Model: Prior-Regularized Knowledge-Graph Supervision</h1>
+          <p class="page-desc">Step through the shared GRU + FiLM world model, auxiliary counterfactual and physiological losses during training, and zero-overhead deployment when the Knowledge Graph is unused at inference.</p>
         </div>
         <div class="pipe-controls">
           <button id="btnModelPlay" class="btn-primary">▶ Play</button>
@@ -280,12 +280,12 @@
 
       <div id="modelStepper" class="stepper stepper-5"></div>
 
-      <div class="pipeline-stage-wrap">
-        <canvas id="modelCanvas"></canvas>
+      <div class="pipeline-stage-wrap dm-svg-wrap">
+        <div id="modelSvgStage" class="dm-svg-stage"></div>
         <div class="pipe-legend-strip">
-          <span class="leg-item"><i class="dot dot-blue"></i>Forward Rollout / Active Flow</span>
-          <span class="leg-item"><i class="dot dot-ochre"></i>KG Diffusion &amp; Context Gate (Training Only)</span>
-          <span class="leg-item"><i class="dot dot-red"></i>Counterfactual &amp; Trajectory Loss Gradients</span>
+          <span class="leg-item"><i class="dot dot-blue"></i>Forward Model (Training &amp; Inference)</span>
+          <span class="leg-item"><i class="dot dot-ochre"></i>Auxiliary KG Priors (Training Only)</span>
+          <span class="leg-item"><i class="dot dot-red"></i>Prior-Regularized Gradients (∇ℒ)</span>
         </div>
       </div>
 
@@ -309,6 +309,7 @@
   </main>
 
   <script src="data.js"></script>
+  <script src="model_svgs.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
